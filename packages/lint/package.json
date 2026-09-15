@@ -59,7 +59,16 @@
     "@eslint/core": "^0.17.0",
     "@typescript-eslint/parser": "^8.40.0",
     "cn": "0.2.6",
-    "eslint": "^9.33.0"
+    "eslint-runtime": "npm:eslint@^9.33.0",
+    "jiti": "^2.6.1"
+  },
+  "peerDependencies": {
+    "eslint": ">=9.30.0"
+  },
+  "peerDependenciesMeta": {
+    "eslint": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@types/node": "^24.3.0",

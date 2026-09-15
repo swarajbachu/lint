@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import * as fs from "node:fs/promises"
 import * as path from "node:path"
+import { createJiti } from "jiti"
 
 import { lintFiles, type ShadcnLintConfig } from "./api"
 
@@ -9,13 +10,15 @@ const HELP = `Usage: shadcn-lint [options] [paths...]
 Run @shadcn/lint in projects that use Biome or another primary toolchain.
 
 Options:
-  -c, --config <path>  Config file (default: shadcn-lint.config.json)
+  -c, --config <path>  Config file (default: shadcn-lint.config.* or components.json)
+      --cwd <path>     Project directory (default: current directory)
   -f, --format <name>  stylish or json (default: stylish)
   -h, --help           Show this help
 `
 
 function argumentsOf(argv: string[]) {
-  let configPath = "shadcn-lint.config.json"
+  let configPath: string | undefined
+  let cwd = process.cwd()
   let format = "stylish"
   const paths: string[] = []
   for (let index = 0; index < argv.length; index++) {
@@ -33,24 +36,68 @@ function argumentsOf(argv: string[]) {
       }
       continue
     }
+    if (value === "--cwd") {
+      const directory = argv[++index]
+      if (!directory) throw new Error("--cwd requires a path")
+      cwd = path.resolve(directory)
+      continue
+    }
     if (value.startsWith("-")) throw new Error(`Unknown option: ${value}`)
     paths.push(value)
   }
   return {
     help: false,
     configPath,
+    cwd,
     format,
     paths: paths.length ? paths : ["."],
   }
 }
 
-async function configAt(file: string): Promise<ShadcnLintConfig> {
-  const absolute = path.resolve(file)
-  const config = JSON.parse(await fs.readFile(absolute, "utf8"))
-  if (!config || typeof config !== "object" || !config.rules) {
-    throw new Error(`${file} must contain a rules object`)
+const DEFAULT_CONFIGS = [
+  "shadcn-lint.config.ts",
+  "shadcn-lint.config.mts",
+  "shadcn-lint.config.js",
+  "shadcn-lint.config.mjs",
+  "shadcn-lint.config.json",
+]
+
+async function exists(file: string) {
+  return fs.access(file).then(
+    () => true,
+    () => false
+  )
+}
+
+async function configAt(
+  file: string | undefined,
+  cwd: string
+): Promise<ShadcnLintConfig> {
+  const selected = file
+    ? path.resolve(cwd, file)
+    : await (async () => {
+        for (const candidate of DEFAULT_CONFIGS) {
+          const absolute = path.resolve(cwd, candidate)
+          if (await exists(absolute)) return absolute
+        }
+        return path.resolve(cwd, "components.json")
+      })()
+  let config: ShadcnLintConfig | undefined
+  if (path.basename(selected) === "components.json") {
+    const components = JSON.parse(await fs.readFile(selected, "utf8"))
+    config = components.shadcnLint
+  } else {
+    const jiti = createJiti(import.meta.url)
+    config = await jiti.import(selected, { default: true })
   }
-  return { ...config, cwd: config.cwd ?? path.dirname(absolute) }
+  if (!config || typeof config !== "object" || !config.rules) {
+    throw new Error(
+      path.basename(selected) === "components.json"
+        ? `${selected} must contain a shadcnLint object with rules`
+        : `${selected} must contain a rules object`
+    )
+  }
+  return { ...config, cwd: config.cwd ?? cwd }
 }
 
 function stylish(diagnostics: Awaited<ReturnType<typeof lintFiles>>) {
@@ -68,7 +115,7 @@ export async function main(argv = process.argv.slice(2)) {
     process.stdout.write(HELP)
     return 0
   }
-  const config = await configAt(options.configPath)
+  const config = await configAt(options.configPath, options.cwd)
   const diagnostics = await lintFiles(options.paths, config)
   process.stdout.write(
     options.format === "json"
@@ -77,7 +124,7 @@ export async function main(argv = process.argv.slice(2)) {
         ? `${stylish(diagnostics)}\n`
         : ""
   )
-  return diagnostics.some((item) => item.severity === "error") ? 1 : 0
+  return diagnostics.length ? 1 : 0
 }
 
 main()

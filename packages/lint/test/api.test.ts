@@ -37,6 +37,8 @@ describe("programmatic API", () => {
       severity: "error",
       line: expect.any(Number),
       column: expect.any(Number),
+      endLine: expect.any(Number),
+      endColumn: expect.any(Number),
     })
   })
 })

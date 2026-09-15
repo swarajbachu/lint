@@ -303,13 +303,13 @@ Oxlint integrations.
 npm install -D @shadcn/lint @biomejs/biome
 ```
 
-Create `shadcn-lint.config.json`:
+Create `shadcn-lint.config.ts`:
 
-```json
-{
-  "rules": {
-    "shadcn/no-restyle": ["error", { "allow": ["layout"] }]
-  }
+```ts
+export default {
+  rules: {
+    "shadcn/no-restyle": ["error", { allow: ["layout"] }],
+  },
 }
 ```
 
@@ -321,8 +321,10 @@ Create `shadcn-lint.config.json`:
 }
 ```
 
-The command exits non-zero for error-level diagnostics. Use `--format json`
+The command exits non-zero when it finds diagnostics. Use `--format json`
 for integrations, and `--config <path>` for a non-default config location.
+Instead of a standalone config, the same object can be stored under
+`shadcnLint` in `components.json`.
 
 ### Oxlint
 

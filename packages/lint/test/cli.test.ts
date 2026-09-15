@@ -11,16 +11,16 @@ const PACKAGE_DIR = path.resolve(
 )
 
 describe("CLI", () => {
-  test("loads JSON configuration and emits JSON diagnostics", () => {
+  test("loads TypeScript configuration and emits JSON diagnostics", () => {
     const fixture = path.join(PACKAGE_DIR, "test/fixtures/project")
     const configDir = fs.mkdtempSync(path.join(os.tmpdir(), "shadcn-lint-cli-"))
-    const config = path.join(configDir, "config.json")
+    const config = path.join(configDir, "config.ts")
     fs.writeFileSync(
       config,
-      JSON.stringify({
+      `export default ${JSON.stringify({
         cwd: fixture,
-        rules: { "shadcn/no-unknown-classes": "error" },
-      })
+        rules: { "shadcn/no-unknown-classes": "warn" },
+      })}`
     )
 
     try {
@@ -39,7 +39,7 @@ describe("CLI", () => {
         { cwd: PACKAGE_DIR, encoding: "utf8" }
       )
 
-      expect(result.status).toBe(1)
+      expect(result.status, result.stderr).toBe(1)
       const diagnostics = JSON.parse(result.stdout)
       expect(
         diagnostics.some(
@@ -49,6 +49,50 @@ describe("CLI", () => {
       ).toBe(true)
     } finally {
       fs.rmSync(configDir, { recursive: true, force: true })
+    }
+  })
+
+  test("loads the shadcnLint key from components.json", () => {
+    const fixture = fs.mkdtempSync(path.join(os.tmpdir(), "shadcn-lint-biome-"))
+    fs.writeFileSync(
+      path.join(fixture, "components.json"),
+      JSON.stringify({
+        shadcnLint: {
+          rules: { "shadcn/no-unknown-classes": "error" },
+        },
+      })
+    )
+    fs.writeFileSync(
+      path.join(fixture, "page.tsx"),
+      `export const Page = () => <div className="flex-cols" />`
+    )
+
+    try {
+      const result = spawnSync(
+        "pnpm",
+        [
+          "--dir",
+          PACKAGE_DIR,
+          "exec",
+          "tsx",
+          path.join(PACKAGE_DIR, "src/cli.ts"),
+          "--cwd",
+          fixture,
+          "--format",
+          "json",
+          "page.tsx",
+        ],
+        { cwd: fixture, encoding: "utf8" }
+      )
+
+      expect(result.status, result.stderr).toBe(1)
+      expect(JSON.parse(result.stdout)).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ ruleId: "shadcn/no-unknown-classes" }),
+        ])
+      )
+    } finally {
+      fs.rmSync(fixture, { recursive: true, force: true })
     }
   })
 })

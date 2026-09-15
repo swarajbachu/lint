@@ -30,7 +30,7 @@ that owns the lint configuration. In a workspace, follow the existing
 shared-config and dependency conventions.
 
 Preserve existing rules, parsers, scripts, and ignores. For Biome, create
-`shadcn-lint.config.json` and compose `biome check . && shadcn-lint .` without
+`shadcn-lint.config.ts` and compose `biome check . && shadcn-lint .` without
 changing `biome.json`. Register the
 plugin through `plugins` for ESLint or `jsPlugins` for Oxlint. Keep the
 framework's parser configuration; add a JSX/TSX parser setup if needed.

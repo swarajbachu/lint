@@ -1,6 +1,6 @@
 import * as path from "node:path"
 import parser from "@typescript-eslint/parser"
-import { ESLint, type Linter } from "eslint"
+import { ESLint, type Linter } from "eslint-runtime"
 
 import { plugin } from "./plugin"
 
@@ -33,8 +33,9 @@ export interface ShadcnLintDiagnostic {
   message: string
   line: number
   column: number
-  endLine?: number
-  endColumn?: number
+  endLine: number
+  endColumn: number
+  fix?: ShadcnLintSuggestion
   suggestions?: ShadcnLintSuggestion[]
 }
 
@@ -75,8 +76,17 @@ export async function lintFiles(
       message: message.message,
       line: message.line,
       column: message.column,
-      ...(message.endLine == null ? {} : { endLine: message.endLine }),
-      ...(message.endColumn == null ? {} : { endColumn: message.endColumn }),
+      endLine: message.endLine ?? message.line,
+      endColumn: message.endColumn ?? message.column,
+      ...(message.fix
+        ? {
+            fix: {
+              description: "Apply fix",
+              replacement: message.fix.text,
+              range: message.fix.range,
+            },
+          }
+        : {}),
       ...(message.suggestions?.length
         ? {
             suggestions: message.suggestions.map((suggestion) => ({
