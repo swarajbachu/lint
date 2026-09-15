@@ -39,6 +39,7 @@
   ],
   "scripts": {
     "build": "tsdown && node scripts/postbuild.mjs",
+    "prepare": "pnpm build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --config vitest.config.ts",
     "prepack": "node scripts/prepack.mjs",
