@@ -31,6 +31,9 @@
     "./package.json": "./package.json"
   },
   "types": "./dist/index.d.ts",
+  "bin": {
+    "shadcn-lint": "./dist/cli.js"
+  },
   "files": [
     "dist"
   ],
@@ -46,6 +49,7 @@
     "lint",
     "eslint",
     "oxlint",
+    "biome",
     "tailwind",
     "tailwindcss",
     "design-system",
@@ -54,15 +58,8 @@
   "dependencies": {
     "@eslint/core": "^0.17.0",
     "@typescript-eslint/parser": "^8.40.0",
-    "cn": "0.2.6"
-  },
-  "peerDependencies": {
-    "eslint": ">=9.30.0"
-  },
-  "peerDependenciesMeta": {
-    "eslint": {
-      "optional": true
-    }
+    "cn": "0.2.6",
+    "eslint": "^9.33.0"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",

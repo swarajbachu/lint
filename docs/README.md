@@ -1,6 +1,7 @@
 # Documentation
 
-Start with [Get started](../README.md#get-started) to set up Oxlint or ESLint.
+Start with [Get started](../README.md#get-started) to set up a Biome workflow,
+Oxlint, or ESLint.
 
 ## Guides
 
@@ -24,5 +25,5 @@ See [shared options](./rules.md) for allowances, contracts, messages, and class 
 ## Reference
 
 - [Settings](../README.md#settings): component imports, helpers, and monorepos.
-- [API reference](./api.md): plugin exports and the experimental project API.
+- [API reference](./api.md): plugin exports, standalone lint API, and the experimental project API.
 - [Contributing](../CONTRIBUTING.md): workspace setup, tests, and benchmarks.

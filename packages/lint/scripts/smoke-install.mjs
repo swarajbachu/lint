@@ -44,6 +44,7 @@ try {
   const tarball = packOut.trim().split("\n").pop()
   const listing = run(`tar -tzf ${JSON.stringify(tarball)}`)
   expect("tarball has the ESM build", listing, "package/dist/index.js")
+  expect("tarball has the standalone CLI", listing, "package/dist/cli.js")
   expect(
     "tarball has the Tailwind worker",
     listing,
@@ -123,6 +124,17 @@ try {
           },
         },
       ],
+    })
+  )
+  write(
+    "shadcn-lint.config.json",
+    JSON.stringify({
+      rules: {
+        "shadcn/no-restyle": ["error", { allow: ["layout"] }],
+        "shadcn/no-raw-colors": "error",
+        "shadcn/no-arbitrary-values": "error",
+        "shadcn/no-unknown-classes": "error",
+      },
     })
   )
 
@@ -226,6 +238,29 @@ try {
     "oxlint: no fallback warning",
     oout,
     /^(?![\s\S]*could not be consulted)/
+  )
+
+  // 6. Standalone command for Biome-first projects.
+  const standalone = spawnSync(
+    "npx",
+    ["shadcn-lint", "--format", "json", "app/page.tsx"],
+    {
+      cwd: dir,
+      encoding: "utf-8",
+      shell: process.platform === "win32",
+    }
+  )
+  const sout = standalone.stdout + standalone.stderr
+  expect("standalone: exits on violations", String(standalone.status), "1")
+  expect(
+    "standalone: reports JSON rule ids",
+    sout,
+    '"ruleId": "shadcn/no-restyle"'
+  )
+  expect(
+    "standalone: keeps project-aware messages",
+    sout,
+    "Use a variant: default, ghost"
   )
 } finally {
   fs.rmSync(dir, { recursive: true, force: true })

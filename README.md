@@ -10,7 +10,7 @@ You define what’s allowed. When an agent breaks a rule, the error explains wha
 
 **Works with your existing design system. No rewrite required.**
 
-`@shadcn/lint` works with Tailwind v4 projects (**shadcn/ui not required**). Available for both **ESLint and Oxlint**.
+`@shadcn/lint` works with Tailwind v4 projects (**shadcn/ui not required**). Available for **Biome workflows**, **ESLint**, and **Oxlint**.
 
 ## Table of contents
 
@@ -287,10 +287,42 @@ See [contracts and custom messages](https://github.com/shadcn-ui/lint/blob/main/
 
 ## Get started
 
-Choose Oxlint or ESLint. The examples below enable `no-restyle` and
+Choose Biome, Oxlint, or ESLint. The examples below enable `no-restyle` and
 allow layout classes such as `mt-4` and `w-full`.
 
 Requires Node.js 20.19 or later and a version supported by your linter.
+
+### Biome
+
+Biome cannot load JavaScript linter plugins directly. Keep Biome as your
+formatter and primary linter, then run the standalone `shadcn-lint` command in
+the same check script. It uses the same project-aware rules as the ESLint and
+Oxlint integrations.
+
+```bash
+npm install -D @shadcn/lint @biomejs/biome
+```
+
+Create `shadcn-lint.config.json`:
+
+```json
+{
+  "rules": {
+    "shadcn/no-restyle": ["error", { "allow": ["layout"] }]
+  }
+}
+```
+
+```json
+{
+  "scripts": {
+    "lint": "biome check . && shadcn-lint ."
+  }
+}
+```
+
+The command exits non-zero for error-level diagnostics. Use `--format json`
+for integrations, and `--config <path>` for a non-default config location.
 
 ### Oxlint
 
@@ -360,7 +392,7 @@ export default defineConfig([
 npx eslint .
 ```
 
-Add your chosen command (`oxlint` or `eslint .`) as the `lint` script in
+Add your chosen command (`shadcn-lint .`, `oxlint`, or `eslint .`) as the `lint` script in
 `package.json`. Then put this in `AGENTS.md`:
 
 ```md

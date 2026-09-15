@@ -15,8 +15,9 @@ and parser setup without adding those rules.
   Find the apps, shared UI packages, lint configs, and task runner.
 - Use the existing ESLint or Oxlint setup. If both are present, register
   the plugin with the one that checks UI files, without duplicating it.
-  If neither is present, set up Oxlint. Check Node.js and linter version
-  compatibility against the documentation.
+  If the project uses Biome, keep it and add the standalone `shadcn-lint`
+  command to the same check workflow. If none is present, set up Oxlint.
+  Check Node.js and linter version compatibility against the documentation.
 - Find the component directories, import aliases, and Tailwind v4 themes.
   Use `components.json` where available. For custom setups, consult the
   [discovery documentation](https://github.com/shadcn-ui/lint/blob/main/docs/how-it-works.md)
@@ -28,7 +29,9 @@ Use the project's package manager. Install dependencies in the package
 that owns the lint configuration. In a workspace, follow the existing
 shared-config and dependency conventions.
 
-Preserve existing rules, parsers, scripts, and ignores. Register the
+Preserve existing rules, parsers, scripts, and ignores. For Biome, create
+`shadcn-lint.config.json` and compose `biome check . && shadcn-lint .` without
+changing `biome.json`. Register the
 plugin through `plugins` for ESLint or `jsPlugins` for Oxlint. Keep the
 framework's parser configuration; add a JSX/TSX parser setup if needed.
 Do not add rule presets, enable new rules, or add rule overrides.

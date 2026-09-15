@@ -39,6 +39,27 @@ const variants = project.variantNamesFor(
 )
 ```
 
+## Programmatic lint API
+
+`lintFiles(paths, config)` runs the rules without a host linter configuration.
+This is useful when Biome is the project's primary linter and formatter.
+
+```ts
+import { lintFiles } from "@shadcn/lint"
+
+const diagnostics = await lintFiles(["src"], {
+  cwd: process.cwd(),
+  rules: {
+    "shadcn/no-restyle": ["error", { allow: ["layout"] }],
+    "shadcn/no-raw-colors": "error",
+  },
+})
+```
+
+Each diagnostic includes an absolute file path, source range, severity, rule
+ID, message, and any replacement suggestions. `settings`, `files`, and
+`ignores` accept the corresponding plugin configuration values.
+
 ## Editor completion
 
 Importing the plugin adds completion for all six rule names in ESLint

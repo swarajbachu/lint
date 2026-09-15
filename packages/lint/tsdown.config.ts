@@ -3,6 +3,7 @@ import { defineConfig } from "tsdown"
 export default defineConfig({
   entry: {
     index: "src/index.ts",
+    cli: "src/cli.ts",
     // The Tailwind oracle's worker thread; loaded by URL from index.
     "tailwind-worker": "src/tailwind/worker.ts",
   },

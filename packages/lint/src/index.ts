@@ -7,6 +7,14 @@ import { projectFor } from "./project/components-json"
 import { colorTokensFor, themeFileFor } from "./project/theme"
 import { variantDefinitionsOf, variantNamesFor } from "./project/variants"
 
+export { lintFiles } from "./api"
+export type {
+  ShadcnLintConfig,
+  ShadcnLintDiagnostic,
+  ShadcnLintSuggestion,
+  ShadcnRuleId,
+  ShadcnRuleSetting,
+} from "./api"
 export { plugin } from "./plugin"
 
 // What the linter knows about a project, for tooling that wants the same
