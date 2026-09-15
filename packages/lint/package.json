@@ -28,6 +28,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./eslint": {
+      "types": "./dist/eslint.d.ts",
+      "default": "./dist/index.js"
+    },
     "./package.json": "./package.json"
   },
   "types": "./dist/index.d.ts",
@@ -57,22 +61,15 @@
     "cn"
   ],
   "dependencies": {
-    "@eslint/core": "^0.17.0",
-    "@typescript-eslint/parser": "^8.40.0",
     "cn": "0.2.6",
-    "eslint-runtime": "npm:eslint@^9.33.0",
-    "jiti": "^2.6.1"
-  },
-  "peerDependencies": {
-    "eslint": ">=9.30.0"
-  },
-  "peerDependenciesMeta": {
-    "eslint": {
-      "optional": true
-    }
+    "jiti": "^2.6.1",
+    "oxc-parser": "^0.148.0",
+    "tinyglobby": "^0.2.15"
   },
   "devDependencies": {
+    "@eslint/core": "^0.17.0",
     "@types/node": "^24.3.0",
+    "@typescript-eslint/parser": "^8.40.0",
     "eslint": "^9.33.0",
     "oxlint": "^1.80.0",
     "tailwind-merge": "^3.6.0",
@@ -83,8 +80,5 @@
   },
   "engines": {
     "node": ">=20.19"
-  },
-  "optionalDependencies": {
-    "oxc-parser": "^0.148.0"
   }
 }

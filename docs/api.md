@@ -42,7 +42,8 @@ const variants = project.variantNamesFor(
 ## Programmatic lint API
 
 `lintFiles(paths, config)` runs the rules without a host linter configuration.
-This is useful when Biome is the project's primary linter and formatter.
+This is useful when Biome is the project's primary linter and formatter. It
+uses `oxc-parser` directly and has no ESLint runtime dependency.
 
 ```ts
 import { lintFiles } from "@shadcn/lint"

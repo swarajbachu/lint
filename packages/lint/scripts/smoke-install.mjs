@@ -1,16 +1,18 @@
 // Packs @shadcn/lint the way `npm publish` would, installs the tarball
 // into a fresh project outside the workspace, and lints that project
 // with ESLint and with Oxlint. Catches what unit tests cannot: the
-// exports map, the ESM build and its worker, the optional oxc-parser, the copied
+// exports map, the ESM build and its worker, the oxc-parser runtime, the copied
 // README, and the messages users see. Run: node scripts/smoke-install.mjs
 
 import { execSync, spawnSync } from "node:child_process"
 import * as fs from "node:fs"
+import { createRequire } from "node:module"
 import * as os from "node:os"
 import * as path from "node:path"
 import { fileURLToPath } from "node:url"
 
 const PKG_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
+const require = createRequire(import.meta.url)
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), "shadcn-lint-smoke-"))
 const run = (cmd, cwd = dir) =>
   execSync(cmd, { cwd, stdio: ["ignore", "pipe", "pipe"], encoding: "utf-8" })
@@ -138,10 +140,9 @@ try {
     })
   )
 
-  // 3. Install from the tarball, plus the linters.
-  run(
-    `pnpm add -D --ignore-workspace ${JSON.stringify(tarball)} eslint@9 @typescript-eslint/parser oxlint tailwindcss@4`
-  )
+  // 3. Install the standalone package first. Biome-first consumers must not
+  // receive ESLint through the package's runtime dependency tree.
+  run(`pnpm add -D --ignore-workspace ${JSON.stringify(tarball)} tailwindcss@4`)
   const installed = JSON.parse(
     fs.readFileSync(
       path.join(dir, "node_modules/@shadcn/lint/package.json"),
@@ -161,6 +162,39 @@ try {
     `installed @shadcn/lint@${installed.version}; oxc-parser resolves from it`,
     probe.stdout + probe.stderr,
     /^oxc/
+  )
+  expect(
+    "standalone install has no ESLint runtime",
+    fs.existsSync(path.join(dir, "node_modules/eslint")) ? "eslint" : "clean",
+    "clean"
+  )
+  write(
+    "standalone.ts",
+    `import { lintFiles } from "@shadcn/lint"\nvoid lintFiles(["app"], { rules: {} })\n`
+  )
+  write(
+    "tsconfig.standalone.json",
+    JSON.stringify({
+      compilerOptions: {
+        module: "NodeNext",
+        moduleResolution: "NodeNext",
+        target: "ES2022",
+        noEmit: true,
+        strict: true,
+        skipLibCheck: false,
+      },
+      files: ["standalone.ts"],
+    })
+  )
+  const tsc = require.resolve("typescript/bin/tsc")
+  run(
+    `${JSON.stringify(process.execPath)} ${JSON.stringify(tsc)} -p tsconfig.standalone.json`
+  )
+  expect("standalone types need no ESLint packages", "clean", "clean")
+
+  // Host-linter compatibility remains optional.
+  run(
+    "pnpm add -D --ignore-workspace eslint@9 @typescript-eslint/parser oxlint"
   )
 
   // 4. ESLint.

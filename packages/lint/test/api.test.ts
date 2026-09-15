@@ -50,4 +50,48 @@ describe("programmatic API", () => {
 
     expect(diagnostics).toEqual([])
   })
+
+  test("resolves same-file wrappers without an ESLint scope manager", async () => {
+    const diagnostics = await lintFiles(["app/local-wrapper.tsx"], {
+      cwd: PROJECT,
+      rules: { "shadcn/no-restyle": ["error", { allow: ["layout"] }] },
+    })
+
+    expect(diagnostics.map((item) => item.message)).toContainEqual(
+      expect.stringContaining(
+        "<LocalButton> forwards className to <Button>, which owns its color"
+      )
+    )
+  })
+
+  test("keeps parser error ranges", async () => {
+    const diagnostics = await lintFiles(["app/syntax-error.tsx"], {
+      cwd: PROJECT,
+      rules: {},
+    })
+
+    expect(diagnostics[0]).toMatchObject({
+      ruleId: null,
+      line: 1,
+      column: 7,
+      endLine: 1,
+      endColumn: 8,
+    })
+  })
+
+  test("normalizes rule configuration locations", async () => {
+    const diagnostics = await lintFiles(["app/oxlint.tsx"], {
+      cwd: PROJECT,
+      rules: {
+        "shadcn/no-restyle": ["error", { contracts: [{ pattern: "[" }] }],
+      },
+    })
+
+    expect(diagnostics[0]).toMatchObject({
+      line: 1,
+      column: 1,
+      endLine: 1,
+      endColumn: 1,
+    })
+  })
 })

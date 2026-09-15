@@ -297,7 +297,8 @@ Requires Node.js 20.19 or later and a version supported by your linter.
 Biome cannot load JavaScript linter plugins directly. Keep Biome as your
 formatter and primary linter, then run the standalone `shadcn-lint` command in
 the same check script. It uses the same project-aware rules as the ESLint and
-Oxlint integrations.
+Oxlint integrations. The standalone path uses the Rust-native `oxc-parser` and
+does not install ESLint or Oxlint, including transitively.
 
 ```bash
 npm install -D @shadcn/lint @biomejs/biome
@@ -366,6 +367,8 @@ Create `eslint.config.mjs`. If your framework already configures ESLint,
 keep its parser setup and add the plugin, rule, and component override.
 
 ```js
+import "@shadcn/lint/eslint"
+
 import { plugin as shadcn } from "@shadcn/lint"
 import tsParser from "@typescript-eslint/parser"
 import { defineConfig } from "eslint/config"

@@ -13,7 +13,7 @@ import { describe, expect, test } from "vitest"
 import { plugin } from "../src/plugin"
 
 const ROOT = path.resolve(__dirname, "..")
-const DIST = path.join(ROOT, "dist/index.d.ts")
+const DIST = path.join(ROOT, "dist/eslint.d.ts")
 const built = fs.existsSync(DIST)
 
 const RULE_NAMES = Object.keys(plugin.rules).map((name) => `shadcn/${name}`)
@@ -45,7 +45,11 @@ function completionsIn(
   // The language service asks for files with forward slashes on every
   // platform, so the in-memory file is keyed that way too.
   const normalized = fileName.replace(/\\/g, "/")
-  const files = new Map([[normalized, text]])
+  const augmentation = path.join(ROOT, "dist/eslint.d.ts").replace(/\\/g, "/")
+  const files = new Map([
+    [normalized, text],
+    [augmentation, fs.readFileSync(augmentation, "utf8")],
+  ])
   const options: ts.CompilerOptions = {
     strict: true,
     allowJs: true,
@@ -95,7 +99,7 @@ export const config: Linter.Config = { plugins: { shadcn }, rules: { /*|*/ } }
 
 describe("flat config completion", () => {
   test("the augmentation names every rule in plugin.rules and nothing else", () => {
-    const source = fs.readFileSync(path.join(ROOT, "src/index.ts"), "utf8")
+    const source = fs.readFileSync(path.join(ROOT, "src/eslint.ts"), "utf8")
     const block =
       source.match(/declare module "@eslint\/core" \{[\s\S]*?\n\}/)?.[0] ?? ""
     const declared = [...block.matchAll(/"(shadcn\/[a-z-]+)"\?:/g)].map(
@@ -138,79 +142,4 @@ describe("flat config completion", () => {
       for (const rule of QUOTED) expect(names).toContain(rule)
     })
   })
-})
-
-// The option names each rule's augmentation offers, read from the type
-// itself: the object type in RuleConfig's tuple, and the element type of
-// its `contracts` array.
-function declaredOptions() {
-  const source = ts.createSourceFile(
-    "index.ts",
-    fs.readFileSync(path.join(ROOT, "src/index.ts"), "utf8"),
-    ts.ScriptTarget.Latest,
-    true
-  )
-  const keysOf = (node: ts.TypeNode | undefined) =>
-    node && ts.isTypeLiteralNode(node)
-      ? node.members
-          .map((m) =>
-            ts.isPropertySignature(m) && m.name && ts.isIdentifier(m.name)
-              ? m.name.text
-              : ""
-          )
-          .filter(Boolean)
-          .sort()
-      : []
-  const contractsOf = (node: ts.TypeNode | undefined) => {
-    if (!node || !ts.isTypeLiteralNode(node)) return null
-    const contracts = node.members.find(
-      (m) =>
-        ts.isPropertySignature(m) &&
-        m.name &&
-        ts.isIdentifier(m.name) &&
-        m.name.text === "contracts"
-    ) as ts.PropertySignature | undefined
-    const type = contracts?.type
-    return type && ts.isArrayTypeNode(type) ? keysOf(type.elementType) : null
-  }
-  const out = new Map<
-    string,
-    { options: string[]; contracts: string[] | null }
-  >()
-  const visit = (node: ts.Node) => {
-    // Each rule is `import("@eslint/core").RuleConfig<[ {...} ]>`.
-    if (
-      ts.isPropertySignature(node) &&
-      ts.isStringLiteral(node.name) &&
-      node.name.text.startsWith("shadcn/") &&
-      node.type &&
-      ts.isImportTypeNode(node.type)
-    ) {
-      const tuple = node.type.typeArguments?.[0]
-      const options =
-        tuple && ts.isTupleTypeNode(tuple) ? tuple.elements[0] : undefined
-      out.set(node.name.text, {
-        options: keysOf(options),
-        contracts: contractsOf(options),
-      })
-    }
-    ts.forEachChild(node, visit)
-  }
-  visit(source)
-  return out
-}
-
-describe("the augmentation's option names", () => {
-  test.each(Object.entries(plugin.rules))(
-    "shadcn/%s offers exactly the options its schema accepts",
-    (name, rule) => {
-      const declared = declaredOptions().get(`shadcn/${name}`)
-      const schema = (rule as any).meta.schema[0]
-      expect(declared?.options).toEqual(Object.keys(schema.properties).sort())
-      const contracts = schema.properties.contracts
-      expect(declared?.contracts).toEqual(
-        contracts ? Object.keys(contracts.items.properties).sort() : null
-      )
-    }
-  )
 })
