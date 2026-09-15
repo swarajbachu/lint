@@ -69,33 +69,38 @@ export async function lintFiles(
   const results = await eslint.lintFiles(paths)
 
   return results.flatMap((result) =>
-    result.messages.map((message) => ({
-      filePath: path.resolve(result.filePath),
-      ruleId: message.ruleId,
-      severity: message.severity === 2 ? "error" : "warning",
-      message: message.message,
-      line: message.line,
-      column: message.column,
-      endLine: message.endLine ?? message.line,
-      endColumn: message.endColumn ?? message.column,
-      ...(message.fix
-        ? {
-            fix: {
-              description: "Apply fix",
-              replacement: message.fix.text,
-              range: message.fix.range,
-            },
-          }
-        : {}),
-      ...(message.suggestions?.length
-        ? {
-            suggestions: message.suggestions.map((suggestion) => ({
-              description: suggestion.desc,
-              replacement: suggestion.fix.text,
-              range: suggestion.fix.range,
-            })),
-          }
-        : {}),
-    }))
+    result.messages
+      .filter(
+        (message) =>
+          message.fatal === true || message.ruleId?.startsWith("shadcn/")
+      )
+      .map((message) => ({
+        filePath: path.resolve(result.filePath),
+        ruleId: message.ruleId,
+        severity: message.severity === 2 ? "error" : "warning",
+        message: message.message,
+        line: message.line,
+        column: message.column,
+        endLine: message.endLine ?? message.line,
+        endColumn: message.endColumn ?? message.column,
+        ...(message.fix
+          ? {
+              fix: {
+                description: "Apply fix",
+                replacement: message.fix.text,
+                range: message.fix.range,
+              },
+            }
+          : {}),
+        ...(message.suggestions?.length
+          ? {
+              suggestions: message.suggestions.map((suggestion) => ({
+                description: suggestion.desc,
+                replacement: suggestion.fix.text,
+                range: suggestion.fix.range,
+              })),
+            }
+          : {}),
+      }))
   )
 }

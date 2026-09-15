@@ -41,4 +41,13 @@ describe("programmatic API", () => {
       endColumn: expect.any(Number),
     })
   })
+
+  test("ignores directives for rules owned by another linter", async () => {
+    const diagnostics = await lintFiles(["app/foreign-directives.tsx"], {
+      cwd: PROJECT,
+      rules: {},
+    })
+
+    expect(diagnostics).toEqual([])
+  })
 })
